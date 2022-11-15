@@ -1,14 +1,13 @@
-export interface BaseItem {
-    name: string;
-    price: number;
-    description: string;
-    image: string;
+export interface BaseImage {
+  name: string;
+  tags: string[];
+  base64: string;
 }
 
-export interface Item extends BaseItem {
-    id: number;
+export interface Image extends BaseImage {
+  id: number;
 }
 
-export interface Items {
-    [key: number]: Item;
+export interface Images {
+  [key: number]: Image;
 }
