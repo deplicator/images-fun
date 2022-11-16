@@ -7,27 +7,61 @@ import {
   TextField,
   Stack,
 } from "@mui/material";
-import { Dispatch, SetStateAction } from "react";
+import axios from "axios";
+import { Dispatch, SetStateAction, useRef } from "react";
 
 const UploadDialog = ({
   isOpen,
   setOpen,
+  update,
 }: {
   isOpen: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  update: Dispatch<SetStateAction<boolean>>;
 }) => {
+  const hiddenFileInput = useRef<HTMLInputElement>(null);
+
   const handleClose = () => {
     setOpen(false);
   };
 
+  const handleClick = () => {
+    if (hiddenFileInput.current !== null) {
+      hiddenFileInput.current.click();
+    }
+  };
+
+  const handleChange = (event: { target: { files: any } }) => {
+    var reader = new FileReader();
+    reader.readAsDataURL(event.target.files[0]);
+    reader.onload = () => {
+      axios
+        .post("http://localhost:3001/api/images", {
+          name: event.target.files[0].name,
+          base64: reader.result,
+          tags: [],
+        })
+        .then((response) => {
+          update(true);
+          setOpen(false);
+        })
+        .catch((error) => {
+          console.error("Error: ", error);
+        });
+    };
+    reader.onerror = (error) => {
+      console.error("Error: ", error);
+    };
+  };
+
   return (
-    <Dialog open={isOpen} onClose={handleClose}>
+    <Dialog open={isOpen} maxWidth="sm" fullWidth onClose={handleClose}>
       <DialogTitle
-        sx={{ mb: 2, backgroundColor: (theme) => theme.palette.primary.main }}
+        sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
       >
         Upload Image
       </DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <Stack spacing={2}>
           <TextField label="Name" />
           <TextField label="Tags" />
@@ -35,10 +69,16 @@ const UploadDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" component="label">
+        <Button variant="contained" component="label" onClick={handleClick}>
           Upload
-          <input hidden accept="image/*" multiple type="file" />
         </Button>
+        <input
+          hidden
+          accept="image/*"
+          ref={hiddenFileInput}
+          onChange={handleChange}
+          type="file"
+        />
       </DialogActions>
     </Dialog>
   );

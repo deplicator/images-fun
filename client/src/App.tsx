@@ -24,6 +24,7 @@ interface IImageData {
 
 const App = () => {
   const [theStuff, setTheStuff] = useState<IImageData[]>([]);
+  const [needNewStuff, setNeedNewStuff] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
@@ -36,10 +37,13 @@ const App = () => {
 
   // get the stuff on load
   useEffect(() => {
-    axios.get("http://localhost:3001/api/images").then((response) => {
-      setTheStuff(response.data as IImageData[]);
-    });
-  }, []);
+    if (needNewStuff) {
+      axios.get("http://localhost:3001/api/images").then((response) => {
+        setTheStuff(response.data as IImageData[]);
+      });
+      setNeedNewStuff(false);
+    }
+  }, [needNewStuff]);
 
   return (
     <>
@@ -63,7 +67,7 @@ const App = () => {
                 height={300}
                 width="100%"
                 alt={item.name}
-                src={`data:image/png;base64,${item.base64}`}
+                src={item.base64}
                 loading="lazy"
                 sx={{ objectFit: "cover" }}
               />
@@ -95,7 +99,11 @@ const App = () => {
         </MenuItem>
       </Menu>
 
-      <UploadDialog isOpen={openUploadDialog} setOpen={setOpenUploadDialog} />
+      <UploadDialog
+        isOpen={openUploadDialog}
+        setOpen={setOpenUploadDialog}
+        update={setNeedNewStuff}
+      />
     </>
   );
 };
