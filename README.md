@@ -1,5 +1,11 @@
 
+## Local
 
+npm --prefix ./client start
+npm --prefix .\api\ run dev
+
+
+## Docker
 
 docker build ./api -t images-api
 docker build ./client -t images-client

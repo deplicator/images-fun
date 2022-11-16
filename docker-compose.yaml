@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  # api: 
+  #   build: ./api
+  #   hostname: images-api
+  #   ports:
+  #     - "3001:3001"
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      - './client:/app'
+    ports:
+      - "3000:3000"
+
