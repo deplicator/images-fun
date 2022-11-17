@@ -1,7 +1,6 @@
 export interface BaseImage {
   name: string;
-  tags: string[];
-  filename: string;
+  tags: string;
   base64: string;
 }
 

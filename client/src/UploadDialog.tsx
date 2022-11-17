@@ -6,9 +6,12 @@ import {
   DialogActions,
   TextField,
   Stack,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
-import { Dispatch, SetStateAction, useRef } from "react";
+import { Dispatch, SetStateAction, useRef, useState } from "react";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import { emptyImageData, IImageData } from "./App";
 
 const UploadDialog = ({
   isOpen,
@@ -21,65 +24,96 @@ const UploadDialog = ({
 }) => {
   const hiddenFileInput = useRef<HTMLInputElement>(null);
 
+  const [imageData, setImageData] = useState<IImageData>(emptyImageData);
+
   const handleClose = () => {
+    setImageData(emptyImageData);
     setOpen(false);
   };
 
-  const handleClick = () => {
+  const handleNameChange = (event: { target: { value: any } }) => {
+    setImageData((prev) => ({
+      ...prev,
+      name: event.target.value,
+    }));
+  };
+
+  const handleSelectImageClick = () => {
     if (hiddenFileInput.current !== null) {
       hiddenFileInput.current.click();
     }
   };
 
-  const handleChange = (event: { target: { files: any } }) => {
+  const handleInputChange = (event: { target: { files: any } }) => {
     var reader = new FileReader();
     reader.readAsDataURL(event.target.files[0]);
     reader.onload = () => {
-      axios
-        .post("http://localhost:3001/api/images", {
-          name: event.target.files[0].name,
-          base64: reader.result,
-          tags: [],
-        })
-        .then((response) => {
-          update(true);
-          setOpen(false);
-        })
-        .catch((error) => {
-          console.error("Error: ", error);
-        });
+      setImageData((prev) => ({
+        ...prev,
+        name: event.target.files[0].name,
+        base64: reader.result as string,
+      }));
     };
     reader.onerror = (error) => {
       console.error("Error: ", error);
     };
   };
 
+  const handleUploadClick = () => {
+    axios
+      .post("http://localhost:3001/api/images", imageData)
+      .then((response) => {
+        update(true);
+        handleClose();
+      })
+      .catch((error) => {
+        console.error("Error: ", error);
+      });
+  };
+
   return (
     <Dialog open={isOpen} maxWidth="sm" fullWidth onClose={handleClose}>
       <DialogTitle
-        sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
+        sx={{
+          backgroundColor: (theme) => theme.palette.primary.main,
+          color: (theme) => theme.palette.primary.contrastText,
+        }}
       >
-        Upload Image
+        <Stack direction="row" spacing={1} alignItems="center">
+          <AddCircleOutlineIcon />
+          <Typography variant="h6">Add Image</Typography>
+        </Stack>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <TextField label="Name" />
+          <Button variant="contained" onClick={handleSelectImageClick}>
+            Select Image
+          </Button>
+          <TextField
+            label="Name"
+            value={imageData.name}
+            onChange={handleNameChange}
+          />
           <TextField label="Tags" />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button variant="contained" component="label" onClick={handleClick}>
-          Upload
-        </Button>
-        <input
-          hidden
-          accept="image/*"
-          ref={hiddenFileInput}
-          onChange={handleChange}
-          type="file"
-        />
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleUploadClick}>
+            Upload
+          </Button>
+        </Stack>
       </DialogActions>
+      <input
+        hidden
+        accept="image/*"
+        ref={hiddenFileInput}
+        onChange={handleInputChange}
+        type="file"
+      />
     </Dialog>
   );
 };

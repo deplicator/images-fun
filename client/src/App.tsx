@@ -1,7 +1,10 @@
 import {
   Box,
   Button,
+  Checkbox,
   Container,
+  FormControlLabel,
+  FormGroup,
   Grid,
   IconButton,
   ImageListItemBar,
@@ -17,12 +20,18 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
 
-interface IImageData {
-  base64: string;
-  id: number;
+export interface IImageData {
+  id?: number;
   name: string;
   tags: string[];
+  base64: string;
 }
+
+export const emptyImageData: IImageData = {
+  name: "",
+  tags: [],
+  base64: "",
+};
 
 const cardColorOptions = [
   "#66FF00",
@@ -37,16 +46,19 @@ const App = () => {
   const [theStuff, setTheStuff] = useState<IImageData[]>([]);
   const [needNewStuff, setNeedNewStuff] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [includeTags, setIncludeTags] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
   const searchForImage = useCallback(() => {
     axios
-      .get(`http://localhost:3001/api/images?search=${searchTerm}`)
+      .get(
+        `http://localhost:3001/api/images?search=${searchTerm}&includetags=${includeTags}`
+      )
       .then((response) => {
         setTheStuff(response.data as IImageData[]);
       });
-  }, [searchTerm]);
+  }, [includeTags, searchTerm]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter") {
@@ -57,9 +69,14 @@ const App = () => {
     }
   };
 
+  const handleCheck = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIncludeTags(event.target.checked);
+  };
+
   const showImageMenu = (event: React.MouseEvent<HTMLElement>) => {
     setMenuAnchor(event.currentTarget);
   };
+
   const closeImageMenu = () => {
     setMenuAnchor(null);
   };
@@ -83,13 +100,8 @@ const App = () => {
 
   return (
     <>
-      <Container>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          spacing={2}
-          sx={{ p: 3 }}
-        >
+      <Container sx={{ p: 4 }}>
+        <Stack direction="row" justifyContent="space-between" spacing={2}>
           <TextField
             label="Search"
             value={searchTerm}
@@ -114,7 +126,13 @@ const App = () => {
             Add Image
           </Button>
         </Stack>
-        <Grid container spacing={2}>
+        <FormGroup sx={{ pl: 4 }}>
+          <FormControlLabel
+            control={<Checkbox defaultChecked onChange={handleCheck} />}
+            label="Include Tags in Search"
+          />
+        </FormGroup>
+        <Grid container spacing={2} sx={{ pt: 4 }}>
           {theStuff.map((item) => (
             <Grid item xs={3} key={item.id}>
               <Box
