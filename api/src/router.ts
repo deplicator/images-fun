@@ -50,8 +50,8 @@ imagesRouter.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// PUT an image
-imagesRouter.put("/:id", async (req: Request, res: Response) => {
+// PATCH an image
+imagesRouter.patch("/:id", async (req: Request, res: Response) => {
   const id: number = parseInt(req.params.id, 10);
 
   try {
@@ -64,9 +64,7 @@ imagesRouter.put("/:id", async (req: Request, res: Response) => {
       return res.status(200).json(updatedItem);
     }
 
-    const newItem = await createImage(itemUpdate);
-
-    res.status(201).json(newItem);
+    res.status(404).json("not found");
   } catch (e) {
     res.status(500).send("problem");
   }

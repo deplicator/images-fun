@@ -19,6 +19,8 @@ import UploadDialog from "./UploadDialog";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 export interface IImageData {
   id?: number;
@@ -48,6 +50,7 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [includeTags, setIncludeTags] = useState(true);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [currentImageId, setCurrentImageId] = useState(0);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
   const searchForImage = useCallback(() => {
@@ -73,23 +76,38 @@ const App = () => {
     setIncludeTags(event.target.checked);
   };
 
-  const showImageMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setMenuAnchor(event.currentTarget);
-  };
+  const showImageMenu =
+    (id: number) => (event: React.MouseEvent<HTMLElement>) => {
+      setMenuAnchor(event.currentTarget);
+      setCurrentImageId(id);
+    };
 
   const closeImageMenu = () => {
     setMenuAnchor(null);
+    setCurrentImageId(0);
+  };
+
+  const editImage = () => {
+    setOpenUploadDialog(true);
+    setMenuAnchor(null);
+  };
+
+  const deleteImage = () => {
+    axios
+      .delete(`http://localhost:3001/api/images/${currentImageId}`)
+      .then((response) => {
+        setNeedNewStuff(true);
+        closeImageMenu();
+      });
   };
 
   // get the stuff when it's needed
   useEffect(() => {
     if (needNewStuff) {
-      axios.get("http://localhost:3001/api/images").then((response) => {
-        setTheStuff(response.data as IImageData[]);
-      });
+      searchForImage();
       setNeedNewStuff(false);
     }
-  }, [needNewStuff]);
+  }, [needNewStuff, searchForImage]);
 
   // get the stuff when search cleared
   useEffect(() => {
@@ -134,7 +152,7 @@ const App = () => {
         </FormGroup>
         <Grid container spacing={2} sx={{ pt: 4 }}>
           {theStuff.map((item) => (
-            <Grid item xs={3} key={item.id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
               <Box
                 p={1}
                 border="1px solid grey"
@@ -153,10 +171,7 @@ const App = () => {
                   title={item.name}
                   position="below"
                   actionIcon={
-                    <IconButton
-                      aria-label={`info about ${item.name}`}
-                      onClick={showImageMenu}
-                    >
+                    <IconButton onClick={showImageMenu(item.id || 0)}>
                       <MoreVertIcon />
                     </IconButton>
                   }
@@ -172,14 +187,20 @@ const App = () => {
         open={Boolean(menuAnchor)}
         onClose={closeImageMenu}
       >
-        <MenuItem aria-label="something" onClick={closeImageMenu}>
-          something
+        <MenuItem onClick={editImage}>
+          <EditIcon sx={{ pr: 1 }} />
+          Edit
+        </MenuItem>
+        <MenuItem onClick={deleteImage}>
+          <DeleteForeverIcon sx={{ pr: 1 }} />
+          Delete
         </MenuItem>
       </Menu>
 
       <UploadDialog
         isOpen={openUploadDialog}
         setOpen={setOpenUploadDialog}
+        imageId={currentImageId}
         update={setNeedNewStuff}
       />
     </>

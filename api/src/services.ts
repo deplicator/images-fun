@@ -53,53 +53,49 @@ export const searchAll = async (
 ): Promise<Image[]> => {
   if (query.includetags && JSON.parse(query.includetags as string)) {
     return defaultImages.filter(
-      (image) =>
-        image.name.match(query.search as string) ||
-        image.tags.match(query.search as string)
+      ({ name, tags }) =>
+        name.match(query.search as string) || tags.match(query.search as string)
     );
   }
-  return defaultImages.filter((image) =>
-    image.name.match(query.search as string)
-  );
+  return defaultImages.filter(({ name }) => name.match(query.search as string));
 };
 
 export const getImageById = async (id: number): Promise<Image> =>
-  defaultImages[id];
+  defaultImages.find((image) => image.id === id) as Image;
 
 export const createImage = async (newImage: BaseImage): Promise<Image> => {
-  const id = nextIndex;
-
-  defaultImages[id] = {
-    id,
+  const addingImage: Image = {
     ...newImage,
+    id: nextIndex,
   };
 
   nextIndex++;
 
-  return defaultImages[id];
+  defaultImages.push(addingImage);
+
+  return getImageById(addingImage.id);
 };
 
 export const updateImage = async (
   id: number,
   updateImage: BaseImage
 ): Promise<Image | null> => {
-  const image = await getImageById(id);
+  const index = defaultImages.findIndex((image) => image.id === id);
 
-  if (!image) {
-    return null;
-  }
+  defaultImages = [
+    ...defaultImages.slice(0, index),
+    {
+      ...defaultImages[index],
+      name: updateImage.name,
+      tags: updateImage.tags,
+    },
+    ...defaultImages.slice(index + 1),
+  ];
 
-  defaultImages[id] = { id, ...updateImage };
-
-  return defaultImages[id];
+  // verify update
+  return await getImageById(id);
 };
 
 export const removeImage = async (id: number): Promise<null | void> => {
-  const image = await getImageById(id);
-
-  if (!image) {
-    return null;
-  }
-
-  delete defaultImages[id];
+  defaultImages = defaultImages.filter((image) => image.id !== id);
 };

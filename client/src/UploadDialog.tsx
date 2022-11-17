@@ -9,21 +9,24 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { emptyImageData, IImageData } from "./App";
 
 const UploadDialog = ({
   isOpen,
   setOpen,
+  imageId,
   update,
 }: {
   isOpen: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  imageId: number;
   update: Dispatch<SetStateAction<boolean>>;
 }) => {
   const hiddenFileInput = useRef<HTMLInputElement>(null);
 
+  const exitExisting = imageId !== 0;
   const [imageData, setImageData] = useState<IImageData>(emptyImageData);
 
   const handleClose = () => {
@@ -66,17 +69,46 @@ const UploadDialog = ({
     };
   };
 
-  const handleUploadClick = () => {
-    axios
-      .post("http://localhost:3001/api/images", imageData)
-      .then((response) => {
-        update(true);
-        handleClose();
-      })
-      .catch((error) => {
-        console.error("Error: ", error);
-      });
+  const handleActionClick = () => {
+    if (exitExisting) {
+      const { id, base64, ...updateData } = imageData;
+      axios
+        .patch(`http://localhost:3001/api/images/${imageId}`, updateData)
+        .then((response) => {
+          update(true);
+          handleClose();
+        })
+        .catch((error) => {
+          console.error("Error: ", error);
+        });
+    } else {
+      axios
+        .post("http://localhost:3001/api/images", imageData)
+        .then((response) => {
+          update(true);
+          handleClose();
+        })
+        .catch((error) => {
+          console.error("Error: ", error);
+        });
+    }
   };
+
+  // initialize if editing image name and tags
+  useEffect(() => {
+    if (exitExisting) {
+      console.log(imageId);
+      axios
+        .get(`http://localhost:3001/api/images/${imageId}`)
+        .then((response) => {
+          setImageData((prev) => ({
+            ...prev,
+            name: response.data.name,
+            tags: response.data.tags,
+          }));
+        });
+    }
+  }, [exitExisting, imageId, isOpen]);
 
   return (
     <Dialog open={isOpen} maxWidth="sm" fullWidth onClose={handleClose}>
@@ -88,14 +120,19 @@ const UploadDialog = ({
       >
         <Stack direction="row" spacing={1} alignItems="center">
           <AddCircleOutlineIcon />
-          <Typography variant="h6">Add Image</Typography>
+          <Typography variant="h6">
+            {" "}
+            {exitExisting ? "Edit Image" : "Add Image"}
+          </Typography>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <Button variant="contained" onClick={handleSelectImageClick}>
-            Select Image
-          </Button>
+          {!exitExisting && (
+            <Button variant="contained" onClick={handleSelectImageClick}>
+              Select Image
+            </Button>
+          )}
           <TextField
             label="Name"
             value={imageData.name}
@@ -113,8 +150,12 @@ const UploadDialog = ({
           <Button variant="outlined" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={handleUploadClick}>
-            Upload
+          <Button
+            variant="contained"
+            // disabled on nothing to save conditions
+            onClick={handleActionClick}
+          >
+            {exitExisting ? "Save" : "Upload"}
           </Button>
         </Stack>
       </DialogActions>
