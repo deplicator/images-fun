@@ -1,5 +1,11 @@
 import express, { Request, Response } from "express";
-import { create, find, findAll, remove, update } from "./services";
+import {
+  createImage,
+  getImageById,
+  removeImage,
+  searchAll,
+  updateImage,
+} from "./services";
 import { BaseImage, Image } from "./interfaces";
 
 export const imagesRouter = express.Router();
@@ -7,7 +13,7 @@ export const imagesRouter = express.Router();
 // GET all images
 imagesRouter.get("/", async (req: Request, res: Response) => {
   try {
-    const items: Image[] = await findAll();
+    const items: Image[] = await searchAll(req.query);
 
     res.status(200).send(items);
   } catch (e) {
@@ -20,7 +26,7 @@ imagesRouter.get("/:id", async (req: Request, res: Response) => {
   const id: number = parseInt(req.params.id, 10);
 
   try {
-    const item: Image = await find(id);
+    const item: Image = await getImageById(id);
 
     if (item) {
       return res.status(200).send(item);
@@ -36,8 +42,7 @@ imagesRouter.get("/:id", async (req: Request, res: Response) => {
 imagesRouter.post("/", async (req: Request, res: Response) => {
   try {
     const item: BaseImage = req.body;
-
-    const newItem = await create(item);
+    const newItem = await createImage(item);
 
     res.status(201).json(newItem);
   } catch (e) {
@@ -52,14 +57,14 @@ imagesRouter.put("/:id", async (req: Request, res: Response) => {
   try {
     const itemUpdate: Image = req.body;
 
-    const existingItem: Image = await find(id);
+    const existingItem: Image = await getImageById(id);
 
     if (existingItem) {
-      const updatedItem = await update(id, itemUpdate);
+      const updatedItem = await updateImage(id, itemUpdate);
       return res.status(200).json(updatedItem);
     }
 
-    const newItem = await create(itemUpdate);
+    const newItem = await createImage(itemUpdate);
 
     res.status(201).json(newItem);
   } catch (e) {
@@ -71,7 +76,7 @@ imagesRouter.put("/:id", async (req: Request, res: Response) => {
 imagesRouter.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id: number = parseInt(req.params.id, 10);
-    await remove(id);
+    await removeImage(id);
 
     res.sendStatus(204);
   } catch (e) {
