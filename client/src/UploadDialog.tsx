@@ -38,6 +38,13 @@ const UploadDialog = ({
     }));
   };
 
+  const handleTagsChange = (event: { target: { value: any } }) => {
+    setImageData((prev) => ({
+      ...prev,
+      tags: event.target.value,
+    }));
+  };
+
   const handleSelectImageClick = () => {
     if (hiddenFileInput.current !== null) {
       hiddenFileInput.current.click();
@@ -94,7 +101,11 @@ const UploadDialog = ({
             value={imageData.name}
             onChange={handleNameChange}
           />
-          <TextField label="Tags" />
+          <TextField
+            label="Tags"
+            value={imageData.tags}
+            onChange={handleTagsChange}
+          />
         </Stack>
       </DialogContent>
       <DialogActions>

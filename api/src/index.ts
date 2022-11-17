@@ -17,7 +17,7 @@ const app = express();
 /** App Configuration */
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.use("/api/images", imagesRouter);
 
 /** Server Activation */
