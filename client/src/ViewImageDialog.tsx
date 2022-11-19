@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import axios from "axios";
 import {
   DialogContent,
@@ -9,23 +9,24 @@ import {
   TextField,
   Stack,
   Typography,
+  Box,
 } from "@mui/material";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ImageIcon from "@mui/icons-material/Image";
 
 import { APIHost } from "./constants";
 import { emptyImageData, IImageData } from "./App";
 
-const UploadDialog = ({
+const ViewImageDialog = ({
   isOpen,
   setOpen,
+  imageId,
   update,
 }: {
   isOpen: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  imageId: number;
   update: Dispatch<SetStateAction<boolean>>;
 }) => {
-  const hiddenFileInput = useRef<HTMLInputElement>(null);
-
   const [imageData, setImageData] = useState<IImageData>(emptyImageData);
 
   const handleClose = () => {
@@ -47,30 +48,10 @@ const UploadDialog = ({
     }));
   };
 
-  const handleSelectImageClick = () => {
-    if (hiddenFileInput.current !== null) {
-      hiddenFileInput.current.click();
-    }
-  };
-
-  const handleInputChange = (event: { target: { files: any } }) => {
-    var reader = new FileReader();
-    reader.readAsDataURL(event.target.files[0]);
-    reader.onload = () => {
-      setImageData((prev) => ({
-        ...prev,
-        name: event.target.files[0].name,
-        base64: reader.result as string,
-      }));
-    };
-    reader.onerror = (error) => {
-      console.error("Error: ", error);
-    };
-  };
-
   const handleActionClick = () => {
+    const { id, base64, ...updateData } = imageData;
     axios
-      .post(`${APIHost}images`, imageData)
+      .patch(`${APIHost}images/${imageId}`, updateData)
       .then((response) => {
         update(true);
         handleClose();
@@ -79,6 +60,20 @@ const UploadDialog = ({
         console.error("Error: ", error);
       });
   };
+
+  // initialize image data
+  useEffect(() => {
+    if (isOpen) {
+      axios.get(`${APIHost}images/${imageId}`).then((response) => {
+        setImageData((prev) => ({
+          ...prev,
+          name: response.data.name,
+          tags: response.data.tags,
+          base64: response.data.base64,
+        }));
+      });
+    }
+  }, [imageId, isOpen]);
 
   return (
     <Dialog open={isOpen} maxWidth="sm" fullWidth onClose={handleClose}>
@@ -89,16 +84,20 @@ const UploadDialog = ({
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <AddCircleOutlineIcon />
-          <Typography variant="h6">Add Image</Typography>
+          <ImageIcon />
+          <Typography variant="h6">{imageData.name}</Typography>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <Button variant="contained" onClick={handleSelectImageClick}>
-            Select Image
-          </Button>
+          <Box
+            component="img"
+            alt={imageData.name}
+            src={imageData.base64}
+            loading="lazy"
+          />
           <TextField
+            // TODO: toggle editing would be cool
             label="Name"
             value={imageData.name}
             onChange={handleNameChange}
@@ -124,15 +123,8 @@ const UploadDialog = ({
           </Button>
         </Stack>
       </DialogActions>
-      <input
-        hidden
-        accept="image/*"
-        ref={hiddenFileInput}
-        onChange={handleInputChange}
-        type="file"
-      />
     </Dialog>
   );
 };
 
-export default UploadDialog;
+export default ViewImageDialog;

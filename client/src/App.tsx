@@ -1,3 +1,5 @@
+import { useEffect, useState, KeyboardEvent, useCallback } from "react";
+import axios from "axios";
 import {
   Box,
   Button,
@@ -10,21 +12,23 @@ import {
   Grid,
   IconButton,
   ImageListItemBar,
+  InputAdornment,
   Menu,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import axios from "axios";
-import { useEffect, useState, KeyboardEvent, useCallback } from "react";
-import UploadDialog from "./UploadDialog";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import SearchIcon from "@mui/icons-material/Search";
-import EditIcon from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+
 import { APIHost } from "./constants";
+import UploadDialog from "./UploadDialog";
+import ViewImageDialog from "./ViewImageDialog";
 
 export interface IImageData {
   id?: number;
@@ -56,12 +60,19 @@ const App = () => {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [currentImageId, setCurrentImageId] = useState(0);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
+  const [openViewImageDialog, setOpenViewImageDialog] = useState(false);
+  const [maxImageCount, setMaxImageCount] = useState(0);
 
   const searchForImage = useCallback(() => {
     axios
       .get(`${APIHost}images?search=${searchTerm}&includetags=${includeTags}`)
       .then((response) => {
         setTheStuff(response.data as IImageData[]);
+
+        // Not ideal, but works without API change
+        if (searchTerm === "") {
+          setMaxImageCount(response.data.length);
+        }
       });
   }, [includeTags, searchTerm]);
 
@@ -89,10 +100,12 @@ const App = () => {
     setCurrentImageId(0);
   };
 
-  const editImage = () => {
-    setOpenUploadDialog(true);
-    setMenuAnchor(null);
-  };
+  const viewEditImage =
+    (id: number) => (event: React.MouseEvent<HTMLElement>) => {
+      setCurrentImageId(id);
+      setOpenViewImageDialog(true);
+      setMenuAnchor(null);
+    };
 
   const deleteImage = () => {
     axios.delete(`${APIHost}images/${currentImageId}`).then((response) => {
@@ -119,22 +132,55 @@ const App = () => {
   return (
     <>
       <Container sx={{ p: 4 }}>
-        <Stack direction="row" justifyContent="space-between" spacing={2}>
-          <TextField
-            label="Search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            onKeyDown={handleKeyDown}
-            sx={{ backgroundColor: "white", width: "60vw" }}
-          />
-          <Button
-            variant="contained"
-            startIcon={<SearchIcon />}
-            onClick={searchForImage}
-            sx={{ minWidth: 150 }}
+        <Card sx={{ p: 2, mb: 4 }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            justifyContent="space-between"
           >
-            Search
-          </Button>
+            <TextField
+              label={`Search by Names${includeTags ? " and Tags" : ""}`}
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onKeyDown={handleKeyDown}
+              sx={{ width: "100%", minWidth: 200 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => {
+                        setSearchTerm("");
+                      }}
+                    >
+                      <CancelIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              variant="contained"
+              startIcon={<SearchIcon />}
+              onClick={searchForImage}
+              sx={{ height: 48, minWidth: 140 }}
+            >
+              Search
+            </Button>
+            <FormGroup sx={{ minWidth: 140 }}>
+              <FormControlLabel
+                control={<Checkbox onChange={handleCheck} />}
+                label="Include Tags"
+              />
+            </FormGroup>
+          </Stack>
+        </Card>
+        <Stack direction="row" justifyContent="space-between">
+          <Typography variant="h4">
+            {theStuff.length === maxImageCount
+              ? `Showing All ${maxImageCount} Images`
+              : `Showing ${theStuff.length} out of ${maxImageCount} Images`}
+          </Typography>
           <Button
             variant="outlined"
             startIcon={<AddCircleOutlineIcon />}
@@ -144,12 +190,6 @@ const App = () => {
             Add Image
           </Button>
         </Stack>
-        <FormGroup sx={{ pl: 4 }}>
-          <FormControlLabel
-            control={<Checkbox onChange={handleCheck} />}
-            label="Include Tags in Search"
-          />
-        </FormGroup>
         <Grid container spacing={2} sx={{ pt: 4 }}>
           {theStuff.map((item) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
@@ -168,7 +208,8 @@ const App = () => {
                   alt={item.name}
                   src={item.base64}
                   loading="lazy"
-                  sx={{ objectFit: "cover" }}
+                  onClick={viewEditImage(item.id || 0)}
+                  sx={{ cursor: "pointer", objectFit: "cover" }}
                 />
                 <ImageListItemBar
                   title={item.name}
@@ -190,10 +231,10 @@ const App = () => {
         open={Boolean(menuAnchor)}
         onClose={closeImageMenu}
       >
-        <MenuItem onClick={editImage}>
-          <EditIcon sx={{ pr: 1 }} color="primary" />
+        <MenuItem onClick={viewEditImage(currentImageId)}>
+          <VisibilityIcon sx={{ pr: 1 }} color="primary" />
           <Typography color={(theme) => theme.palette.primary.main}>
-            Edit
+            View & Edit
           </Typography>
         </MenuItem>
         <Divider />
@@ -205,10 +246,16 @@ const App = () => {
         </MenuItem>
       </Menu>
 
+      <ViewImageDialog
+        isOpen={openViewImageDialog}
+        setOpen={setOpenViewImageDialog}
+        imageId={currentImageId}
+        update={setNeedNewStuff}
+      />
+
       <UploadDialog
         isOpen={openUploadDialog}
         setOpen={setOpenUploadDialog}
-        imageId={currentImageId}
         update={setNeedNewStuff}
       />
     </>
