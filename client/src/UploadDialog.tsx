@@ -12,6 +12,7 @@ import axios from "axios";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { emptyImageData, IImageData } from "./App";
+import { APIHost } from "./constants";
 
 const UploadDialog = ({
   isOpen,
@@ -73,7 +74,7 @@ const UploadDialog = ({
     if (exitExisting) {
       const { id, base64, ...updateData } = imageData;
       axios
-        .patch(`http://localhost:3001/api/images/${imageId}`, updateData)
+        .patch(`${APIHost}images/${imageId}`, updateData)
         .then((response) => {
           update(true);
           handleClose();
@@ -83,7 +84,7 @@ const UploadDialog = ({
         });
     } else {
       axios
-        .post("http://localhost:3001/api/images", imageData)
+        .post(`${APIHost}images`, imageData)
         .then((response) => {
           update(true);
           handleClose();
@@ -97,16 +98,13 @@ const UploadDialog = ({
   // initialize if editing image name and tags
   useEffect(() => {
     if (exitExisting) {
-      console.log(imageId);
-      axios
-        .get(`http://localhost:3001/api/images/${imageId}`)
-        .then((response) => {
-          setImageData((prev) => ({
-            ...prev,
-            name: response.data.name,
-            tags: response.data.tags,
-          }));
-        });
+      axios.get(`${APIHost}images/${imageId}`).then((response) => {
+        setImageData((prev) => ({
+          ...prev,
+          name: response.data.name,
+          tags: response.data.tags,
+        }));
+      });
     }
   }, [exitExisting, imageId, isOpen]);
 

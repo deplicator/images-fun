@@ -1,8 +1,10 @@
 import {
   Box,
   Button,
+  Card,
   Checkbox,
   Container,
+  Divider,
   FormControlLabel,
   FormGroup,
   Grid,
@@ -12,6 +14,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import axios from "axios";
 import { useEffect, useState, KeyboardEvent, useCallback } from "react";
@@ -21,6 +24,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import { APIHost } from "./constants";
 
 export interface IImageData {
   id?: number;
@@ -48,16 +52,14 @@ const App = () => {
   const [theStuff, setTheStuff] = useState<IImageData[]>([]);
   const [needNewStuff, setNeedNewStuff] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [includeTags, setIncludeTags] = useState(true);
+  const [includeTags, setIncludeTags] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [currentImageId, setCurrentImageId] = useState(0);
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
   const searchForImage = useCallback(() => {
     axios
-      .get(
-        `http://localhost:3001/api/images?search=${searchTerm}&includetags=${includeTags}`
-      )
+      .get(`${APIHost}images?search=${searchTerm}&includetags=${includeTags}`)
       .then((response) => {
         setTheStuff(response.data as IImageData[]);
       });
@@ -93,12 +95,10 @@ const App = () => {
   };
 
   const deleteImage = () => {
-    axios
-      .delete(`http://localhost:3001/api/images/${currentImageId}`)
-      .then((response) => {
-        setNeedNewStuff(true);
-        closeImageMenu();
-      });
+    axios.delete(`${APIHost}images/${currentImageId}`).then((response) => {
+      setNeedNewStuff(true);
+      closeImageMenu();
+    });
   };
 
   // get the stuff when it's needed
@@ -146,17 +146,20 @@ const App = () => {
         </Stack>
         <FormGroup sx={{ pl: 4 }}>
           <FormControlLabel
-            control={<Checkbox defaultChecked onChange={handleCheck} />}
+            control={<Checkbox onChange={handleCheck} />}
             label="Include Tags in Search"
           />
         </FormGroup>
         <Grid container spacing={2} sx={{ pt: 4 }}>
           {theStuff.map((item) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
-              <Box
-                p={1}
-                border="1px solid grey"
-                sx={{ backgroundColor: cardColorOptions[item.name.length % 6] }}
+              <Card
+                elevation={4}
+                sx={{
+                  p: 1,
+                  backgroundColor: cardColorOptions[item.name.length % 6],
+                  border: "1px solid grey",
+                }}
               >
                 <Box
                   component="img"
@@ -176,7 +179,7 @@ const App = () => {
                     </IconButton>
                   }
                 />
-              </Box>
+              </Card>
             </Grid>
           ))}
         </Grid>
@@ -188,12 +191,17 @@ const App = () => {
         onClose={closeImageMenu}
       >
         <MenuItem onClick={editImage}>
-          <EditIcon sx={{ pr: 1 }} />
-          Edit
+          <EditIcon sx={{ pr: 1 }} color="primary" />
+          <Typography color={(theme) => theme.palette.primary.main}>
+            Edit
+          </Typography>
         </MenuItem>
+        <Divider />
         <MenuItem onClick={deleteImage}>
-          <DeleteForeverIcon sx={{ pr: 1 }} />
-          Delete
+          <DeleteForeverIcon sx={{ pr: 1 }} color="warning" />
+          <Typography color={(theme) => theme.palette.warning.main}>
+            Delete
+          </Typography>
         </MenuItem>
       </Menu>
 
