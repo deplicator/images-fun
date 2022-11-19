@@ -4,13 +4,19 @@ Quick little project to play with an API made with node.js and docker.
 
 ## Run Project
 
+Should be able to run these commands in bash or powershell.
+
 ### With Docker
 
 - Requirement: have docker
 
 ```
 git clone https://github.com/deplicator/images-fun.git
-cd images-fun
+cd images-fun/api
+npm install
+cd ../client
+npm install
+cd ../
 docker compose up
 ```
 
@@ -23,14 +29,16 @@ Terminal 1
 
 ```
 git clone https://github.com/deplicator/images-fun.git
-cd images-fun
-npm install --prefix api/ && npm install --prefix client/
-npm start --prefix api/
+cd images-fun/api
+npm install
+npm start
 ```
 
 Terminal 2
 
 ```
+cd images-fun/client
+npm install
 npm start --prefix client/
 ```
 
