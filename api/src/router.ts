@@ -34,6 +34,7 @@ imagesRouter.get("/:id", async (req: Request, res: Response) => {
 
     res.status(404).send("item not found");
   } catch (e) {
+    console.log(e);
     res.status(500).send("problem");
   }
 });
