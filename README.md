@@ -8,7 +8,7 @@ Should be able to run these commands in bash or powershell.
 
 ### With Docker
 
-- Requirement: have docker
+- Requirement: have docker and node/npm
 
 ```
 git clone https://github.com/deplicator/images-fun.git
@@ -39,7 +39,7 @@ Terminal 2
 ```
 cd images-fun/client
 npm install
-npm start --prefix client/
+npm start
 ```
 
 ## Play
