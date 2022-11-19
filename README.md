@@ -49,4 +49,6 @@ Open a browser to `http://localhost:3000`. Have fun with images!
 - better responsiveness
 - click and drag to arrange order, send changed order property to API
 - groups of images
+- swap between image cards and a list with details
+- some variable names leave a lot to be desired
 - two separate projects
